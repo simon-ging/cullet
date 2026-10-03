@@ -33,7 +33,9 @@ cd "$(dirname "${BASH_SOURCE[0]}")/.."
 if [[ "$BUILD" == "true" ]]; then
     # the oldest supported python, and the full extra so the torch code is covered
     uv venv --allow-existing --python 3.10 .venv
-    uv pip install --python .venv -U -e ".[full,dev]" "genbadge[coverage]"
+    uv pip install --python .venv -U -e ".[full,dev]" "genbadge[coverage]" keyring
+    # PyPI refuses a version that exists already, so the version is raised above the published one
+    .venv/bin/python bash/bump_version.py
     # a skipped test fails the run, the badge must not count code that was not tested
     CULLET_FULL_BUILD=1 .venv/bin/python -m pytest --cov --cov-report=xml -rs
     mkdir -p docs
@@ -43,5 +45,11 @@ if [[ "$BUILD" == "true" ]]; then
 fi
 
 if [[ "$UPLOAD" == "true" ]]; then
-    uv publish
+    if [[ -n "$UV_PUBLISH_TOKEN" ]]; then
+        uv publish
+    else
+        # the token is read from the system keyring, where twine keeps it as well:
+        # keyring set https://upload.pypi.org/legacy/ __token__
+        PATH="$PWD/.venv/bin:$PATH" uv publish --keyring-provider subprocess --username __token__
+    fi
 fi
