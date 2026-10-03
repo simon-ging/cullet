@@ -3,7 +3,7 @@ Photo viewer. Open a folder, or an image file to start at that image.
 
     cullet /path/to/photos
 
-With --dedup the folder is searched for duplicate images first (needs the dedup extra, the
+With --dedup the folder is searched for duplicate images first (needs the full extra, the
 settings are the dedup_ options) and the viewer opens the groups for review: keys 1-9 trash one
 member, P accepts the proposal, J/K step through the groups.
 
@@ -31,7 +31,7 @@ from PySide6.QtWidgets import QApplication
 from typedparser import TypedParser, VerboseQuietArgs, add_argument
 
 from cullet.dedup_review import DedupReview
-from cullet.extras import require_dedup_extra
+from cullet.extras import require_full_extra
 from cullet.file_ops import TAG_MARKER
 from cullet.logs import configure_logging
 from cullet.main_window import MainWindow
@@ -75,7 +75,7 @@ class Args(DedupPrefixedArgs, VerboseQuietArgs):
     dedup: bool = add_argument(
         action="store_true",
         help="Find duplicate images in the folder and open them for review, with the "
-        "dedup_ options as settings. Needs the dedup extra installed.",
+        "dedup_ options as settings. Needs the full extra installed.",
     )
 
 
@@ -112,7 +112,7 @@ def main():
 
     review = None
     if args.dedup:
-        require_dedup_extra()
+        require_full_extra()
         # torch is only loaded when needed, it costs seconds at startup
         from cullet.dedup.images import find_duplicate_images
 

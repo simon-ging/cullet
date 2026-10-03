@@ -31,9 +31,9 @@ set -e
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
 if [[ "$BUILD" == "true" ]]; then
-    # the oldest supported python, and the dedup extra so the duplicate detection is covered
+    # the oldest supported python, and the full extra so the torch code is covered
     uv venv --allow-existing --python 3.10 .venv
-    uv pip install --python .venv -U -e ".[dedup,dev]" "genbadge[coverage]"
+    uv pip install --python .venv -U -e ".[full,dev]" "genbadge[coverage]"
     QT_QPA_PLATFORM=offscreen .venv/bin/python -m pytest --cov --cov-report=xml
     mkdir -p docs
     .venv/bin/genbadge coverage -i .covreport/coverage.xml -o docs/coverage.svg

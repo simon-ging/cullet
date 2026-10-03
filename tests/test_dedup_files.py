@@ -1,8 +1,6 @@
 import pytest
 
-pytest.importorskip("pathspec")  # part of the dedup extra
-
-from cullet.dedup.files import (  # noqa: E402
+from cullet.dedup.files import (
     PathSpecArgs,
     filter_rel_files,
     index_files,

@@ -3,6 +3,7 @@ The file side of the deduplication, without torch: index a folder, filter paths 
 gitignore-style or regex patterns, and remove the duplicates.
 """
 
+import json
 import logging
 import os
 import shutil
@@ -11,6 +12,7 @@ from typing import Optional
 
 from attrs import define
 from natsort import natsorted
+from pathspec import PathSpec, RegexPattern
 from typedparser import add_argument
 
 from cullet.file_ops import move_to_system_trash
@@ -56,8 +58,6 @@ def filter_rel_files(
         exclude_regex: regular expressions, a file matching one of them is dropped
         exclude_gitignore_file: a file of gitignore-style patterns to exclude
     """
-    from pathspec import PathSpec, RegexPattern  # part of the dedup extra
-
     if exclude_gitignore_file is not None:
         lines = Path(exclude_gitignore_file).read_text(encoding="utf-8").splitlines()
         exclude_git = list(exclude_git or []) + lines
@@ -95,6 +95,11 @@ def index_files(
             exclude_gitignore_file=pathspec_args.exclude_gitignore_file,
         )
     return {rel_file: (input_dir / rel_file).stat() for rel_file in rel_files}
+
+
+def write_json(data, json_file: Path) -> None:
+    json_file.parent.mkdir(parents=True, exist_ok=True)
+    json_file.write_text(json.dumps(data, indent=2), encoding="utf-8")
 
 
 def remove_duplicates(

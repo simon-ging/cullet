@@ -15,7 +15,6 @@ processes new videos. Needs the ffmpeg and ffprobe binaries.
 Example: cullet-dedup-videos /path/to/videos -Q /path/to/quarantine -w
 """
 
-import json
 import logging
 import subprocess
 from collections import Counter
@@ -26,8 +25,8 @@ from attrs import define
 from natsort import natsorted
 from typedparser import TypedParser, VerboseQuietArgs, add_argument
 
-from cullet.dedup.files import PathSpecArgs, index_files, remove_duplicates
-from cullet.extras import require_dedup_extra
+from cullet.dedup.files import PathSpecArgs, index_files, remove_duplicates, write_json
+from cullet.extras import require_full_extra
 from cullet.logs import configure_logging
 from cullet.paths import is_inside_dir
 
@@ -110,13 +109,13 @@ def main():
     args: Args = parser.parse_args()
     configure_logging(args)
     logger.info(f"{args}")
-    require_dedup_extra()
+    require_full_extra()
     # torch is only loaded behind the check, so a missing extra gives a message that helps
     from tqdm import tqdm
 
     from cullet.dedup.common import EmbeddingCache, group_pairs, pick_best_member
     from cullet.dedup.sscd import SSCD_INPUT_SIZE, SscdEmbedder
-    from cullet.dedup.video import (
+    from cullet.video import (
         ScreenshotError,
         probe_video,
         screenshot_timestamps,
@@ -242,9 +241,7 @@ def main():
             to_remove.append(rel_files[i])
         report.append(group_report)
     if args.report_file is not None:
-        report_file = Path(args.report_file)
-        report_file.parent.mkdir(parents=True, exist_ok=True)
-        report_file.write_text(json.dumps(report, indent=2), encoding="utf-8")
+        write_json(report, Path(args.report_file))
     if len(broken_files) > 0:
         logger.warning(f"Skipped {len(broken_files)} unreadable files: {list(broken_files)[:5]}")
     actions = Counter()

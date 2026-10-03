@@ -27,10 +27,10 @@ uv tool install cullet
 or `pip install cullet` into an environment of your choice. Rotating JPEGs losslessly needs the
 `jpegtran` binary, which comes with `libjpeg-turbo` on most distributions.
 
-Finding duplicates needs torch and is an extra:
+Finding duplicates and fixing rotations need torch, which comes with the full extra:
 
 ```bash
-uv tool install "cullet[dedup]"
+uv tool install "cullet[full]"
 ```
 
 ## Usage
@@ -47,25 +47,31 @@ order they are given. Deleted files are moved to the system trash, never removed
 puts them into a folder of your choice instead), and every file operation can be undone with
 `u`. `cullet --help` lists all options.
 
-## Removing duplicates without the viewer
+## Command line tools
 
-Both commands need the dedup extra. They only log what they would do until `-w` is given, then
-the duplicates go to the system trash, or into a folder with `-Q`.
+They only log what they would do until `-w` is given. Each has `--help`.
+
+| command | does | needs |
+| --- | --- | --- |
+| `cullet-dedup-images` | removes duplicate images, into the system trash or a folder with `-Q` | full extra |
+| `cullet-dedup-videos` | the same for videos | full extra, ffmpeg |
+| `cullet-fix-rotation-images` | finds photos stored sideways or upside down and rotates them | full extra |
+| `cullet-fix-rotation-videos` | the same for videos | full extra, ffmpeg |
+| `cullet-downscale-images` | shrinks images, keeping their metadata | |
+| `cullet-downscale-videos` | shrinks videos | ffmpeg |
 
 ```bash
-cullet-dedup-images /path/to/photos
 cullet-dedup-videos /path/to/videos -Q /path/to/quarantine -w
+cullet-downscale-images /path/to/photos -s 1080 -w
 ```
-
-The video command needs the `ffmpeg` and `ffprobe` binaries.
 
 ## Install locally and run tests
 
 Clone repository and cd into. Setup python 3.10 or higher.
-Note: The tests of the duplicate detection are skipped unless torch is installed.
+Note: The tests that need torch are skipped unless it is installed.
 
 ```bash
-pip install -e .[dedup,dev]
+pip install -e .[full,dev]
 pylint src
 
 # run tests

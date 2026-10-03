@@ -2,3 +2,5 @@ PySide6
 Pillow
 natsort
 typedparser
+pathspec>=1.0
+filetype

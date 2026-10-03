@@ -1,6 +1,6 @@
 import pytest
 
-# torch is an optional dependency, the dedup extra
+# torch is an optional dependency, the full extra
 torch = pytest.importorskip("torch")
 
 from cullet.dedup.image_groups import DedupImageConfig  # noqa: E402

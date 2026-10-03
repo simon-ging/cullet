@@ -13,7 +13,6 @@ To review the groups by hand instead, open the viewer with the same settings pre
 cullet /path/to/images --dedup --dedup_threshold 0.9
 """
 
-import json
 import logging
 from collections import Counter
 from pathlib import Path
@@ -22,9 +21,9 @@ from typing import Optional
 from attrs import define
 from typedparser import TypedParser, VerboseQuietArgs, add_argument
 
-from cullet.dedup.files import PathSpecArgs, remove_duplicates
+from cullet.dedup.files import PathSpecArgs, remove_duplicates, write_json
 from cullet.dedup.image_groups import DedupImageArgs, dedup_config_from_args, describe
-from cullet.extras import require_dedup_extra
+from cullet.extras import require_full_extra
 from cullet.logs import configure_logging
 
 logger = logging.getLogger(__name__)
@@ -56,7 +55,7 @@ def main():
     args: Args = parser.parse_args()
     configure_logging(args)
     logger.info(f"{args}")
-    require_dedup_extra()
+    require_full_extra()
     # torch is only loaded behind the check, so a missing extra gives a message that helps
     from cullet.dedup.images import find_duplicate_images
 
@@ -80,9 +79,7 @@ def main():
             to_remove.append(member.rel_file)
         report.append(group_report)
     if args.report_file is not None:
-        report_file = Path(args.report_file)
-        report_file.parent.mkdir(parents=True, exist_ok=True)
-        report_file.write_text(json.dumps(report, indent=2), encoding="utf-8")
+        write_json(report, Path(args.report_file))
     if len(result.broken_files) > 0:
         logger.warning(
             f"Skipped {len(result.broken_files)} unreadable files: {list(result.broken_files)[:5]}"
