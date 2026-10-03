@@ -2,11 +2,19 @@
 
 <p align="center">
 <a href="https://github.com/simon-ging/cullet/actions/workflows/build-py310.yml">
-  <img alt="build 3.10 status" title="build 3.10 status" src="https://img.shields.io/github/actions/workflow/status/simon-ging/cullet/build-py310.yml?branch=main&label=python%203.10" />
+  <img alt="minimal build 3.10 status" title="minimal build 3.10 status" src="https://img.shields.io/github/actions/workflow/status/simon-ging/cullet/build-py310.yml?branch=main&label=minimal%20build%203.10" />
 </a>
 <a href="https://github.com/simon-ging/cullet/actions/workflows/build-py314.yml">
-  <img alt="build 3.14 status" title="build 3.14 status" src="https://img.shields.io/github/actions/workflow/status/simon-ging/cullet/build-py314.yml?branch=main&label=python%203.14" />
+  <img alt="minimal build 3.14 status" title="minimal build 3.14 status" src="https://img.shields.io/github/actions/workflow/status/simon-ging/cullet/build-py314.yml?branch=main&label=minimal%20build%203.14" />
 </a>
+<br />
+<a href="https://github.com/simon-ging/cullet/actions/workflows/build-py310-full.yml">
+  <img alt="full build 3.10 status" title="full build 3.10 status" src="https://img.shields.io/github/actions/workflow/status/simon-ging/cullet/build-py310-full.yml?branch=main&label=full%20build%203.10" />
+</a>
+<a href="https://github.com/simon-ging/cullet/actions/workflows/build-py314-full.yml">
+  <img alt="full build 3.14 status" title="full build 3.14 status" src="https://img.shields.io/github/actions/workflow/status/simon-ging/cullet/build-py314-full.yml?branch=main&label=full%20build%203.14" />
+</a>
+<br />
 <img alt="coverage" title="coverage" src="https://raw.githubusercontent.com/simon-ging/cullet/main/docs/coverage.svg" />
 <a href="https://pypi.org/project/cullet/">
   <img alt="version" title="version" src="https://img.shields.io/pypi/v/cullet?color=success" />

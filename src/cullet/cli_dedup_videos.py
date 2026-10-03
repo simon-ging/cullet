@@ -25,8 +25,8 @@ from attrs import define
 from natsort import natsorted
 from typedparser import TypedParser, VerboseQuietArgs, add_argument
 
-from cullet.dedup.files import PathSpecArgs, index_files, remove_duplicates, write_json
 from cullet.extras import require_full_extra
+from cullet.files import PathSpecArgs, index_files, remove_duplicates, write_json
 from cullet.logs import configure_logging
 from cullet.paths import is_inside_dir
 

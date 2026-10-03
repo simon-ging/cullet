@@ -9,7 +9,6 @@ from pathlib import Path
 from typing import Any
 
 from attrs import define, make_class
-
 from typedparser import add_argument
 
 # name -> (python type, add_argument kwargs). Shortcuts are only used in the unprefixed class.

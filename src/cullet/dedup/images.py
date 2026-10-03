@@ -22,7 +22,6 @@ from cullet.dedup.common import (
     group_pairs,
     pick_best_member,
 )
-from cullet.dedup.files import PathSpecArgs, index_files
 from cullet.dedup.image_groups import (
     DedupImageConfig,
     DedupImageResult,
@@ -30,6 +29,7 @@ from cullet.dedup.image_groups import (
     DuplicateMember,
 )
 from cullet.dedup.sscd import SSCD_INPUT_SIZE, SscdEmbedder, get_default_device, get_sscd_transform
+from cullet.files import PathSpecArgs, index_files
 from cullet.paths import is_inside_dir
 
 logger = logging.getLogger(__name__)

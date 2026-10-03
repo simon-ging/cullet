@@ -1,8 +1,8 @@
 from pathlib import Path
 
+from cullet.dedup.image_groups import DedupImageResult, DuplicateGroup, DuplicateMember
 from cullet.dedup_review import DedupReview
 from cullet.keymap import DEDUP_KEYMAP, DEFAULT_KEYMAP, split_action
-from cullet.dedup.image_groups import DedupImageResult, DuplicateGroup, DuplicateMember
 
 
 def make_review(folder: Path) -> DedupReview:

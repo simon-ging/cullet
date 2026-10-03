@@ -145,7 +145,10 @@ class MainWindow(QMainWindow):
         self.view.double_clicked.connect(lambda: self.set_fullscreen(not self.isFullScreen()))
 
         self.thumb_loader = ImageLoader(
-            make_thumbnail_decoder(THUMB_DECODE_SIZE), max_items=THUMB_CACHE_ITEMS, parent=self
+            make_thumbnail_decoder(THUMB_DECODE_SIZE),
+            max_items=THUMB_CACHE_ITEMS,
+            max_bytes=None,
+            parent=self,
         )
         self.thumb_model = ThumbnailModel(self.thumb_loader, self)
         self.strip = ThumbnailStrip()

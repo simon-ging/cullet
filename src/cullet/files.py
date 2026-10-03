@@ -1,6 +1,6 @@
 """
-The file side of the deduplication, without torch: index a folder, filter paths with
-gitignore-style or regex patterns, and remove the duplicates.
+File handling of the command line tools, without torch: index a folder, filter paths with
+gitignore-style or regex patterns, write a report, and remove duplicates.
 """
 
 import json

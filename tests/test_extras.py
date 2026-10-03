@@ -6,11 +6,9 @@ from cullet import extras
 
 
 def test_missing_extra_names_the_packages_and_the_install_command(monkeypatch):
-    real_find_spec = importlib.util.find_spec
+    # every other package counts as installed, whatever the environment of the test run has
     monkeypatch.setattr(
-        importlib.util,
-        "find_spec",
-        lambda name: None if name in ("torch", "tqdm") else real_find_spec(name),
+        importlib.util, "find_spec", lambda name: None if name in ("torch", "tqdm") else object()
     )
     with pytest.raises(SystemExit) as error:
         extras.require_full_extra()

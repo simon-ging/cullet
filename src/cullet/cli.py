@@ -27,16 +27,15 @@ from pathlib import Path
 
 from attrs import define
 from PySide6.QtWidgets import QApplication
-
 from typedparser import TypedParser, VerboseQuietArgs, add_argument
 
+from cullet.dedup.image_groups import dedup_config_from_args, make_dedup_image_args_class
 from cullet.dedup_review import DedupReview
 from cullet.extras import require_full_extra
 from cullet.file_ops import TAG_MARKER
 from cullet.logs import configure_logging
 from cullet.main_window import MainWindow
 from cullet.thumb_store import reset_thumb_stores
-from cullet.dedup.image_groups import dedup_config_from_args, make_dedup_image_args_class
 
 logger = logging.getLogger(__name__)
 DEDUP_PREFIX = "dedup_"

@@ -1,4 +1,4 @@
-name: build for python 3.10
+name: minimal build for python 3.10
 
 on:
   workflow_dispatch:
@@ -46,7 +46,7 @@ jobs:
 #
     - name: Run pytest
       run: |
-        .venv/bin/python -m pytest tests --cov
+        .venv/bin/python -m pytest tests --cov -rs
 #
     - name: Run pylint
       continue-on-error: true

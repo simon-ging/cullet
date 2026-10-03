@@ -15,10 +15,9 @@ from pathlib import Path
 from typing import Optional
 
 from attrs import define
-
 from typedparser import TypedParser, VerboseQuietArgs, add_argument
 
-from cullet.dedup.files import PathSpecArgs, index_files
+from cullet.files import PathSpecArgs, index_files
 from cullet.logs import configure_logging
 from cullet.paths import is_inside_dir
 

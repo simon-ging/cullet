@@ -239,3 +239,23 @@ def test_cli_rejects_missing_path(tmp_path, monkeypatch):
     monkeypatch.setattr(sys, "argv", ["cullet", (tmp_path / "nothing").as_posix()])
     with pytest.raises(FileNotFoundError):
         cli.main()
+
+
+def test_image_cache_is_bounded_by_bytes(app, folder):
+    from cullet.image_cache import ImageLoader
+
+    files = sorted(folder.glob("*.jpg"))
+    one_image = 512 * 384 * 3
+    # room for two images and a bit, so the third decode pushes the first one out
+    loader = ImageLoader(max_items=10, max_bytes=int(one_image * 2.5))
+    for file in files[:3]:
+        loader.request(file)
+        wait_for(app, lambda: loader.get(file) is not None, "decode")
+    assert loader.cached_bytes() <= one_image * 2.5
+    assert list(loader._cache) == [f.as_posix() for f in files[1:3]]
+
+    # one image over the budget is still kept, the viewer has to show something
+    tiny = ImageLoader(max_items=10, max_bytes=10)
+    tiny.request(files[0])
+    wait_for(app, lambda: tiny.get(files[0]) is not None, "decode")
+    assert list(tiny._cache) == [files[0].as_posix()]

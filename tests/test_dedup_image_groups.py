@@ -1,7 +1,6 @@
 from pathlib import Path
 
 from attrs import define
-
 from typedparser import TypedParser, VerboseQuietArgs
 
 from cullet.dedup.image_groups import (

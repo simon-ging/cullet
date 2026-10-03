@@ -9,7 +9,6 @@ import pytest
 pytest.importorskip("numpy")  # part of the full extra
 
 from cullet import video as videotools  # noqa: E402
-
 from cullet.video import (  # noqa: E402
     DEFAULT_CRF,
     ROTATE_FILTERS,

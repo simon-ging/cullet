@@ -1,6 +1,6 @@
 import pytest
 
-from cullet.dedup.files import (
+from cullet.files import (
     PathSpecArgs,
     filter_rel_files,
     index_files,

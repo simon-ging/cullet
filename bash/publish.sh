@@ -34,7 +34,8 @@ if [[ "$BUILD" == "true" ]]; then
     # the oldest supported python, and the full extra so the torch code is covered
     uv venv --allow-existing --python 3.10 .venv
     uv pip install --python .venv -U -e ".[full,dev]" "genbadge[coverage]"
-    QT_QPA_PLATFORM=offscreen .venv/bin/python -m pytest --cov --cov-report=xml
+    # a skipped test fails the run, the badge must not count code that was not tested
+    CULLET_FULL_BUILD=1 .venv/bin/python -m pytest --cov --cov-report=xml -rs
     mkdir -p docs
     .venv/bin/genbadge coverage -i .covreport/coverage.xml -o docs/coverage.svg
     rm -rf dist

@@ -23,6 +23,8 @@ DecodeFn = Callable[[Path], QImage]
 THUMB_JPEG_QUALITY = 88
 PRIORITY_VISIBLE = 0
 PRIORITY_WARMUP = -1
+# decoded panoramas are hundreds of megabytes each, a count alone does not bound the memory
+MAX_CACHE_BYTES = 1024**3
 
 
 def decode_full(path: Path) -> QImage:
@@ -86,12 +88,14 @@ class ImageLoader(QObject):
         self,
         decode_fn: DecodeFn = decode_full,
         max_items: int = 6,
+        max_bytes: int | None = MAX_CACHE_BYTES,
         threads: int = 2,
         parent: QObject | None = None,
     ):
         super().__init__(parent)
         self.decode_fn = decode_fn
         self.max_items = max_items
+        self.max_bytes = max_bytes
         self.pool = QThreadPool(self)
         self.pool.setMaxThreadCount(threads)
         self._cache: OrderedDict[str, tuple[float, QImage]] = OrderedDict()
@@ -145,9 +149,18 @@ class ImageLoader(QObject):
         self._pending.pop(key, None)
         self._cache[key] = (mtime, qimage)
         self._cache.move_to_end(key)
-        while len(self._cache) > self.max_items:
+        # the least recently used go first. The newest always stays, however big it is.
+        while len(self._cache) > 1 and (
+            len(self._cache) > self.max_items or self.cached_bytes() > self.max_bytes_or_inf()
+        ):
             self._cache.popitem(last=False)
         self.image_ready.emit(key)
+
+    def cached_bytes(self) -> int:
+        return sum(qimage.sizeInBytes() for _mtime, qimage in self._cache.values())
+
+    def max_bytes_or_inf(self) -> float:
+        return float("inf") if self.max_bytes is None else self.max_bytes
 
     def _on_failed(self, key: str, message: str) -> None:
         self._pending.pop(key, None)

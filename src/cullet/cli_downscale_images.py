@@ -36,12 +36,9 @@ from typing import Optional
 import filetype
 from attrs import define
 from PIL import Image, UnidentifiedImageError
-
 from typedparser import TypedParser, VerboseQuietArgs, add_argument
 
-from cullet.dedup.files import PathSpecArgs, index_files
-from cullet.logs import configure_logging
-from cullet.paths import is_inside_dir
+from cullet.files import PathSpecArgs, index_files
 from cullet.images import (
     ImageMetadata,
     check_exif_survived,
@@ -53,6 +50,8 @@ from cullet.images import (
     scale_to_bigger_side,
     scale_to_smaller_side,
 )
+from cullet.logs import configure_logging
+from cullet.paths import is_inside_dir
 
 logger = logging.getLogger(__name__)
 

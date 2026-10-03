@@ -21,9 +21,9 @@ from typing import Optional
 from attrs import define
 from typedparser import TypedParser, VerboseQuietArgs, add_argument
 
-from cullet.dedup.files import PathSpecArgs, remove_duplicates, write_json
 from cullet.dedup.image_groups import DedupImageArgs, dedup_config_from_args, describe
 from cullet.extras import require_full_extra
+from cullet.files import PathSpecArgs, remove_duplicates, write_json
 from cullet.logs import configure_logging
 
 logger = logging.getLogger(__name__)

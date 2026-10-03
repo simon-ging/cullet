@@ -40,15 +40,14 @@ from typing import Optional
 import torch
 from attrs import define
 from natsort import natsorted
-
 from tqdm import tqdm
 from typedparser import TypedParser, VerboseQuietArgs, add_argument
+
 from cullet.dedup.common import EmbeddingCache
-from cullet.dedup.files import PathSpecArgs, index_files, write_json
+from cullet.files import PathSpecArgs, index_files, write_json
 from cullet.images import save_image
 from cullet.logs import configure_logging
 from cullet.paths import is_inside_dir
-
 from cullet.rotation import (
     N_ROTATIONS,
     RESIZE_SIZE,
