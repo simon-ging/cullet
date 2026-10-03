@@ -47,6 +47,18 @@ order they are given. Deleted files are moved to the system trash, never removed
 puts them into a folder of your choice instead), and every file operation can be undone with
 `u`. `cullet --help` lists all options.
 
+## Removing duplicates without the viewer
+
+Both commands need the dedup extra. They only log what they would do until `-w` is given, then
+the duplicates go to the system trash, or into a folder with `-Q`.
+
+```bash
+cullet-dedup-images /path/to/photos
+cullet-dedup-videos /path/to/videos -Q /path/to/quarantine -w
+```
+
+The video command needs the `ffmpeg` and `ffprobe` binaries.
+
 ## Install locally and run tests
 
 Clone repository and cd into. Setup python 3.10 or higher.

@@ -31,13 +31,14 @@ from PySide6.QtWidgets import QApplication
 from typedparser import TypedParser, VerboseQuietArgs, add_argument
 
 from cullet.dedup_review import DedupReview
+from cullet.extras import require_dedup_extra
 from cullet.file_ops import TAG_MARKER
+from cullet.logs import configure_logging
 from cullet.main_window import MainWindow
 from cullet.thumb_store import reset_thumb_stores
 from cullet.dedup.image_groups import dedup_config_from_args, make_dedup_image_args_class
 
 logger = logging.getLogger(__name__)
-VERBOSITY_LADDER = ["CRITICAL", "ERROR", "WARNING", "INFO", "DEBUG"]
 DEDUP_PREFIX = "dedup_"
 DedupPrefixedArgs = make_dedup_image_args_class("DedupPrefixedArgs", prefix=DEDUP_PREFIX)
 
@@ -81,11 +82,7 @@ class Args(DedupPrefixedArgs, VerboseQuietArgs):
 def main():
     parser = TypedParser.create_parser(Args, description=__doc__)
     args: Args = parser.parse_args()
-    logging.basicConfig(
-        level=get_log_level(args),
-        format="%(asctime)s %(levelname).4s %(message)s",
-        datefmt="%Y%m%d %H:%M:%S",
-    )
+    configure_logging(args)
     logger.info(f"{args}")
     path = Path(args.path).absolute()
     if path.is_file():
@@ -115,6 +112,7 @@ def main():
 
     review = None
     if args.dedup:
+        require_dedup_extra()
         # torch is only loaded when needed, it costs seconds at startup
         from cullet.dedup.images import find_duplicate_images
 
@@ -139,13 +137,3 @@ def main():
     window.resize(1400, 900)
     window.show()
     sys.exit(app.exec())
-
-
-def get_log_level(args: VerboseQuietArgs) -> str:
-    """INFO by default, every -v or -q moves one step along the ladder."""
-    if args.loglevel is not None:
-        assert not (args.verbose or args.quiet), "Cannot set both -v/-q and --loglevel"
-        assert args.loglevel in VERBOSITY_LADDER, f"{args.loglevel=} not in {VERBOSITY_LADDER}"
-        return args.loglevel
-    index = VERBOSITY_LADDER.index("INFO") + args.verbose - args.quiet
-    return VERBOSITY_LADDER[max(0, min(len(VERBOSITY_LADDER) - 1, index))]

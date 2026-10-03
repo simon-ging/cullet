@@ -25,11 +25,13 @@ classifiers = [
 dynamic = ["version", "dependencies"]
 
 [project.optional-dependencies]
-dedup = ["torch", "torchvision", "tqdm"]
+dedup = ["torch", "torchvision", "tqdm", "numpy", "pathspec>=1.0"]
 dev = ["pytest", "pytest-cov", "pylint", "numpy"]
 
 [project.scripts]
 cullet = "cullet.cli:main"
+cullet-dedup-images = "cullet.cli_dedup_images:main"
+cullet-dedup-videos = "cullet.cli_dedup_videos:main"
 
 [project.urls]
 Project-URL = "https://github.com/simon-ging/cullet"

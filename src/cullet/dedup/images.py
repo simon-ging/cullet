@@ -8,7 +8,6 @@ new ones.
 """
 
 import logging
-import os
 from pathlib import Path
 from typing import Any
 
@@ -23,6 +22,7 @@ from cullet.dedup.common import (
     group_pairs,
     pick_best_member,
 )
+from cullet.dedup.files import PathSpecArgs, index_files
 from cullet.dedup.image_groups import (
     DedupImageConfig,
     DedupImageResult,
@@ -71,6 +71,7 @@ def _collate_as_lists(batch):
 def find_duplicate_images(
     input_dir: Path,
     config: DedupImageConfig,
+    pathspec_args: PathSpecArgs | None = None,
     exclude_dir: Path | None = None,
 ) -> DedupImageResult:
     """
@@ -79,11 +80,12 @@ def find_duplicate_images(
     Args:
         input_dir: folder to search
         config: detection settings
+        pathspec_args: optional include/exclude patterns for the file index
         exclude_dir: files inside this dir are skipped, e.g. the quarantine dir of an earlier run
     """
     input_dir = Path(input_dir)
     device = get_default_device() if config.device is None else config.device
-    src_index = index_files(input_dir, config.recursive)
+    src_index = index_files(input_dir, config.recursive, pathspec_args)
     logger.info(f"Found {len(src_index)} files.")
     rel_files = natsorted(
         f
@@ -154,18 +156,6 @@ def find_duplicate_images(
     pairs = find_similar_pairs(embeddings, config.threshold, device)
     groups = make_groups(input_dir, rel_files, entries, pairs, config)
     return DedupImageResult(groups, len(rel_files), len(pairs), broken_files)
-
-
-def index_files(input_dir: Path, recursive: bool) -> dict[str, os.stat_result]:
-    """All files of the folder with their stat, keyed by the path relative to the folder."""
-    index = {}
-    for root, dirs, names in os.walk(input_dir):
-        for name in names:
-            file = Path(root) / name
-            index[file.relative_to(input_dir).as_posix()] = file.stat()
-        if not recursive:
-            dirs.clear()
-    return index
 
 
 def make_groups(
