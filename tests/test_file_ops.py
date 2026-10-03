@@ -226,3 +226,39 @@ def test_read_exif_summary_without_exif(tmp_path):
     Image.fromarray(np.zeros((8, 8, 3), dtype=np.uint8)).save(path)
     summary = read_exif_summary(path)
     assert summary.startswith("mtime 20") and summary.endswith("  0.0 MB"), summary
+
+
+def test_system_trash_and_undo(tmp_path, monkeypatch):
+    # the trash of the desktop lives in the data dir of the user, point it into the test dir
+    data_home = tmp_path / "data_home"
+    data_home.mkdir()
+    monkeypatch.setenv("XDG_DATA_HOME", data_home.as_posix())
+    src = tmp_path / "photos" / "a.png"
+    src.parent.mkdir()
+    Image.fromarray(np.zeros((8, 8, 3), dtype=np.uint8)).save(src)
+    ops = FileOps(None, lambda _m: None)
+
+    dst = ops.trash(src)
+    assert not src.exists()
+    assert dst == data_home / "Trash" / "files" / "a.png" and dst.is_file()
+    info_file = data_home / "Trash" / "info" / "a.png.trashinfo"
+    assert info_file.is_file()
+
+    assert ops.undo() == src
+    assert src.is_file() and not dst.exists() and not info_file.exists()
+
+    dst = ops.trash(src)
+    dst.unlink()
+    with pytest.raises(FileNotFoundError, match="trash emptied"):
+        ops.undo()
+
+
+def test_system_trash_failure_keeps_file(tmp_path, monkeypatch):
+    # a data dir that does not exist makes the trash unusable
+    monkeypatch.setenv("XDG_DATA_HOME", (tmp_path / "missing").as_posix())
+    src = tmp_path / "a.png"
+    Image.fromarray(np.zeros((8, 8, 3), dtype=np.uint8)).save(src)
+    ops = FileOps(None, lambda _m: None)
+    with pytest.raises(OSError, match="--trash_dir"):
+        ops.trash(src)
+    assert src.is_file() and ops.undo_stack == []

@@ -57,7 +57,6 @@ SLIDESHOW_MIN_S = 0.2
 SLIDESHOW_MAX_S = 60.0
 FOLDER_REFRESH_DELAY_MS = 500  # collects bursts of file system events into one refresh
 logger = logging.getLogger(__name__)
-DEFAULT_TRASH_DIR = Path.home() / ".cullet_trash"
 
 
 class _ViewStack(QStackedWidget):
@@ -84,7 +83,7 @@ class MainWindow(QMainWindow):
         folder: Path,
         start_file: Path | None = None,
         keymap: dict[str, str] | None = None,
-        trash_dir: Path = DEFAULT_TRASH_DIR,
+        trash_dir: Path | None = None,
         review: DedupReview | None = None,
         target_dirs: list[Path] | None = None,
         tags: list[str] | None = None,
@@ -362,9 +361,8 @@ class MainWindow(QMainWindow):
             self.log_panel.log(f"DEL no image {number}, the group has {len(files)}")
             return
         path = files[number - 1]
-        self.file_ops.trash(path, note=self.review.member_note(path))
-        self.loader.invalidate(path)
-        self.refresh_folder()
+        if self._trash(path, note=self.review.member_note(path)):
+            self.refresh_folder()
 
     def accept_proposal(self) -> None:
         """Trash every member of the current group except the proposed keep."""
@@ -374,10 +372,10 @@ class MainWindow(QMainWindow):
             self.log_panel.log(f"ACCEPT skipped, proposed keep {keep.path.name} is gone")
             return
         removals = [m for m in review.existing(review.group_index) if m is not keep]
-        for member in removals:
-            self.file_ops.trash(member.path, note=review.member_note(member.path))
-            self.loader.invalidate(member.path)
-        self.log_panel.log(f"ACCEPT kept {keep.path.name}, trashed {len(removals)}")
+        n_trashed = sum(
+            self._trash(member.path, note=review.member_note(member.path)) for member in removals
+        )
+        self.log_panel.log(f"ACCEPT kept {keep.path.name}, trashed {n_trashed}")
         self.refresh_folder()
 
     # ---------- file operations
@@ -418,9 +416,21 @@ class MainWindow(QMainWindow):
         path = self.current_path()
         if path is None:
             return
-        self.file_ops.trash(path)
+        if self._trash(path):
+            self.refresh_folder()
+
+    def _trash(self, path: Path, note: str = "") -> bool:
+        """Trash the file. A filesystem without a trash refuses, then the file stays where it
+        is and the reason goes to the log panel."""
+        try:
+            self.file_ops.trash(path, note=note)
+        except OSError as e:
+            # the viewer keeps running, the user can go on with other files or restart with
+            # a trash dir
+            self.log_panel.log(f"DEL failed: {e}")
+            return False
         self.loader.invalidate(path)
-        self.refresh_folder()
+        return True
 
     def rename_current(self) -> None:
         path = self.current_path()

@@ -43,8 +43,9 @@ cullet /path/to/photos --dedup
 ```
 
 The number keys move the image into the target folders (`-a`) and toggle the tags (`-T`), in the
-order they are given. Deleted files are moved to a trash dir, never removed, and every file
-operation can be undone with `u`. `cullet --help` lists all options.
+order they are given. Deleted files are moved to the system trash, never removed (`--trash_dir`
+puts them into a folder of your choice instead), and every file operation can be undone with
+`u`. `cullet --help` lists all options.
 
 ## Install locally and run tests
 

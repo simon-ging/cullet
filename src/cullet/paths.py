@@ -2,27 +2,19 @@
 Where cullet keeps its files, and how a folder is named inside those places.
 """
 
-import getpass
-import os
-import tempfile
 import urllib.parse
 from pathlib import Path
+
+from PySide6.QtCore import QStandardPaths
 
 APP_NAME = "cullet"
 
 
 def get_cache_dir() -> Path:
-    """Cache dir for thumbnails and model weights, following the XDG base directory spec."""
-    return Path(os.environ.get("XDG_CACHE_HOME") or Path.home() / ".cache") / APP_NAME
-
-
-def get_temp_cache_dir() -> Path:
-    """
-    Cache dir for computed data, gone after a reboot.
-
-    The temp dir is shared between users, so the name includes the user to avoid collisions.
-    """
-    return Path(tempfile.gettempdir()) / f"{APP_NAME}-{getpass.getuser()}" / "cache"
+    """Where the platform keeps caches of the user, e.g. ~/.cache/cullet on Linux. Thumbnails,
+    embeddings and model weights go here."""
+    location = QStandardPaths.StandardLocation.GenericCacheLocation
+    return Path(QStandardPaths.writableLocation(location)) / APP_NAME
 
 
 def folder_cache_name(folder: Path) -> str:

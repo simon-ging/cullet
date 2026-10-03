@@ -11,7 +11,7 @@ from typing import Any
 
 import torch
 
-from cullet.paths import folder_cache_name, get_temp_cache_dir
+from cullet.paths import folder_cache_name, get_cache_dir
 
 logger = logging.getLogger(__name__)
 
@@ -21,14 +21,11 @@ class EmbeddingCache:
     Cache per-file results of one input directory, keyed by relative path. An entry is only
     reused if size and mtime of the file are unchanged.
 
-    The cache lives in the temp dir, so it is gone after a reboot and rebuilding it costs
-    seconds to minutes per input folder.
+    Rebuilding the cache costs seconds to minutes per input folder.
     """
 
     def __init__(self, kind: str, base_dir: Path, reset: bool = False):
-        self.cache_file = (
-            get_temp_cache_dir() / "dedup" / kind / f"{folder_cache_name(base_dir)}.pth"
-        )
+        self.cache_file = get_cache_dir() / "dedup" / kind / f"{folder_cache_name(base_dir)}.pth"
         self.entries: dict[str, dict[str, Any]] = {}
         if self.cache_file.is_file() and not reset:
             self.entries = torch.load(self.cache_file, map_location="cpu", weights_only=True)

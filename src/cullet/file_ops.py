@@ -1,5 +1,5 @@
 """
-File operations of the viewer with an undo stack: move to the trash dir, rename, rotate.
+File operations of the viewer with an undo stack: move to the trash, rename, rotate.
 Every operation is reported through the log callback in a short "VERB details" form.
 """
 
@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Callable
 
 from attrs import define
+from PySide6.QtCore import QFile
 
 from cullet.image_io import Transform, inverse, rotate_file
 
@@ -24,18 +25,28 @@ class FileOp:
 
 
 class FileOps:
-    def __init__(self, trash_dir: Path, log: Callable[[str], None]):
-        self.trash_dir = Path(trash_dir)
+    def __init__(self, trash_dir: Path | None, log: Callable[[str], None]):
+        """
+        Args:
+            trash_dir: deleted files are moved here. None uses the trash of the desktop, the
+                one the file manager shows.
+            log: called with one line per operation
+        """
+        self.trash_dir = None if trash_dir is None else Path(trash_dir)
         self.log = log
         self.undo_stack: list[FileOp] = []
 
     def trash(self, path: Path, note: str = "") -> Path:
-        """Move the file into the trash dir, mirroring its absolute path so nothing collides.
-        The note is put into the log line, e.g. dimensions and similarity of a duplicate."""
+        """Move the file into the trash. In a trash dir its absolute path is mirrored so nothing
+        collides. The note is put into the log line, e.g. dimensions and similarity of a
+        duplicate."""
         path = Path(path).absolute()
-        dst = free_path(self.trash_dir / path.relative_to(path.anchor))
-        dst.parent.mkdir(parents=True, exist_ok=True)
-        shutil.move(path, dst)
+        if self.trash_dir is None:
+            dst = move_to_system_trash(path)
+        else:
+            dst = free_path(self.trash_dir / path.relative_to(path.anchor))
+            dst.parent.mkdir(parents=True, exist_ok=True)
+            shutil.move(path, dst)
         self.undo_stack.append(FileOp("DEL", path, dst))
         self.log(f"DEL {note + ' ' if note else ''}{path.name} -> {dst}")
         return dst
@@ -82,10 +93,34 @@ class FileOps:
             self.log(f"UNDO ROT {op.src.name}")
             return op.src
         assert not op.src.exists(), f"Cannot undo, {op.src} exists again"
+        if not op.dst.exists():
+            raise FileNotFoundError(f"Cannot undo, {op.dst} is gone. Was the trash emptied?")
         op.src.parent.mkdir(parents=True, exist_ok=True)
         shutil.move(op.dst, op.src)
+        if op.kind == "DEL" and self.trash_dir is None:
+            # the system trash keeps a record next to each file, without the file it would
+            # show up in the file manager as an entry that cannot be restored
+            trash_info_file(op.dst).unlink(missing_ok=True)
         self.log(f"UNDO {op.kind} {op.dst.name} -> {op.src}")
         return op.src
+
+
+def move_to_system_trash(path: Path) -> Path:
+    """Move the file into the trash of the desktop and return where it is now. Raises if the
+    filesystem of the file has no trash, instead of deleting the file for good."""
+    file = QFile(path.as_posix())
+    if not file.moveToTrash():
+        raise OSError(
+            f"Cannot move {path} to the system trash ({file.errorString()}). "
+            f"Give a trash dir with --trash_dir for files on this filesystem."
+        )
+    return Path(file.fileName())
+
+
+def trash_info_file(trashed_file: Path) -> Path:
+    """The record the freedesktop trash keeps for a trashed file: <trash>/info/<name>.trashinfo
+    for <trash>/files/<name>."""
+    return trashed_file.parent.parent / "info" / f"{trashed_file.name}.trashinfo"
 
 
 def free_path(dst: Path) -> Path:

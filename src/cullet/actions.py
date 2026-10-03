@@ -96,7 +96,7 @@ class Actions:
         self.window.go_to_group(self.window.review.group_index - 1)
 
     def delete_member(self, number: int) -> None:
-        """move image N of the group to the trash dir"""
+        """move image N of the group to the trash"""
         self.window.delete_member(number)
 
     def accept_proposal(self) -> None:
@@ -122,7 +122,7 @@ class Actions:
         self.window.rotate_current(Transform.ROTATE_90)
 
     def delete_current(self) -> None:
-        """move to the trash dir"""
+        """move to the trash"""
         self.window.delete_current()
 
     def rename_current(self) -> None:

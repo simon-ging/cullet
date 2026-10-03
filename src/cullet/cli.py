@@ -32,7 +32,7 @@ from typedparser import TypedParser, VerboseQuietArgs, add_argument
 
 from cullet.dedup_review import DedupReview
 from cullet.file_ops import TAG_MARKER
-from cullet.main_window import DEFAULT_TRASH_DIR, MainWindow
+from cullet.main_window import MainWindow
 from cullet.thumb_store import reset_thumb_stores
 from cullet.dedup.image_groups import dedup_config_from_args, make_dedup_image_args_class
 
@@ -47,10 +47,10 @@ class Args(DedupPrefixedArgs, VerboseQuietArgs):
     path: Path = add_argument(
         positional=True, type=str, help="Folder of images, or an image file to start at"
     )
-    trash_dir: Path = add_argument(
+    trash_dir: Path | None = add_argument(
         type=str,
-        default=DEFAULT_TRASH_DIR.as_posix(),
-        help="Deleted files are moved here, mirroring their absolute path",
+        help="Deleted files are moved here, mirroring their absolute path, instead of into the "
+        "system trash. For filesystems that have no trash.",
     )
     target_folder: list[str] = add_argument(
         shortcut="-a",
@@ -131,7 +131,7 @@ def main():
     window = MainWindow(
         folder,
         start_file=start_file,
-        trash_dir=Path(args.trash_dir),
+        trash_dir=None if args.trash_dir is None else Path(args.trash_dir),
         review=review,
         target_dirs=target_dirs,
         tags=tags,
