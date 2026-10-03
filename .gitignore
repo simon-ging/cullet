@@ -58,6 +58,7 @@ docs/generated/
 .doctrees
 *.lnk
 venv*/
+.venv/
 ~$*.*
 .directory
 nohup.out

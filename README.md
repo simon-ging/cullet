@@ -7,6 +7,7 @@
 <a href="https://github.com/simon-ging/cullet/actions/workflows/build-py314.yml">
   <img alt="build 3.14 status" title="build 3.14 status" src="https://img.shields.io/github/actions/workflow/status/simon-ging/cullet/build-py314.yml?branch=main&label=python%203.14" />
 </a>
+<img alt="coverage" title="coverage" src="https://raw.githubusercontent.com/simon-ging/cullet/main/docs/coverage.svg" />
 <a href="https://pypi.org/project/cullet/">
   <img alt="version" title="version" src="https://img.shields.io/pypi/v/cullet?color=success" />
 </a>
