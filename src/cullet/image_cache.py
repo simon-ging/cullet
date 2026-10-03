@@ -24,7 +24,7 @@ THUMB_JPEG_QUALITY = 88
 PRIORITY_VISIBLE = 0
 PRIORITY_WARMUP = -1
 # decoded panoramas are hundreds of megabytes each, a count alone does not bound the memory
-MAX_CACHE_BYTES = 1024**3
+MAX_CACHE_BYTES = 4 * 1024**3
 
 
 def decode_full(path: Path) -> QImage:
