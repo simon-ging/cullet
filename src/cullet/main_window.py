@@ -522,7 +522,12 @@ class MainWindow(QMainWindow):
         path = self.current_path()
         if path is None or path.as_posix() != key:
             return
-        self.view.set_image(self.loader.get(path))
+        qimage = self.loader.get(path)
+        if qimage is None:
+            # the file was rewritten while this decode ran, e.g. rotated. The lookup just
+            # started a decode of the new content, which reports back here when it is done.
+            return
+        self.view.set_image(qimage)
         self._update_status()
 
     def _on_image_failed(self, key: str, message: str) -> None:
