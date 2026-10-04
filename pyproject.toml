@@ -36,6 +36,7 @@ cullet-fix-rotation-images = "cullet.extras:fix_rotation_images"
 cullet-fix-rotation-videos = "cullet.extras:fix_rotation_videos"
 cullet-downscale-images = "cullet.cli_downscale_images:main"
 cullet-downscale-videos = "cullet.cli_downscale_videos:main"
+cullet-rotate-videos = "cullet.cli_rotate_videos:main"
 
 [project.urls]
 Project-URL = "https://github.com/simon-ging/cullet"

@@ -41,6 +41,21 @@ Finding duplicates and fixing rotations need torch, which comes with the full ex
 uv tool install "cullet[full]"
 ```
 
+### Open with
+
+To get cullet into the "Open with" menu of the file manager for photos and folders, install the
+desktop file of this repository:
+
+```bash
+curl -o ~/.local/share/applications/cullet.desktop https://raw.githubusercontent.com/simon-ging/cullet/main/packaging/cullet.desktop
+update-desktop-database ~/.local/share/applications
+# optional, make it the default for photos
+xdg-mime default cullet.desktop image/jpeg image/png
+```
+
+This needs the `cullet` command on the PATH of the desktop session, `uv tool install` puts it
+into `~/.local/bin`.
+
 ## Usage
 
 ```bash
@@ -67,6 +82,7 @@ They only log what they would do until `-w` is given. Each has `--help`.
 | `cullet-fix-rotation-videos` | the same for videos | full extra, ffmpeg |
 | `cullet-downscale-images` | shrinks images, keeping their metadata | |
 | `cullet-downscale-videos` | shrinks videos | ffmpeg |
+| `cullet-rotate-videos` | rotates the videos you name by a given angle | ffmpeg |
 
 ```bash
 cullet-dedup-videos /path/to/videos -Q /path/to/quarantine -w
@@ -76,6 +92,13 @@ cullet-downscale-images /path/to/photos -s 1080 -w
 ## Install locally and run tests
 
 Clone repository and cd into. Setup python 3.10 or higher.
+
+Dev build: install the clone as the `cullet` command, with torch, so code changes are live:
+
+```bash
+uv tool install --editable ".[full]"
+```
+
 Note: The tests that need torch are skipped unless it is installed.
 
 ```bash

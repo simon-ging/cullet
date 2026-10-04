@@ -16,10 +16,13 @@ import tempfile
 from collections import Counter
 from collections.abc import Callable
 from pathlib import Path
+from typing import TYPE_CHECKING
 
-import numpy as np
 from attrs import define
 from PIL import Image
+
+if TYPE_CHECKING:
+    import numpy as np
 
 logger = logging.getLogger(__name__)
 
@@ -165,7 +168,10 @@ def take_screenshot(video_file: Path, timestamp: float, size: int | None = None)
 def decode_frames(
     video_file: Path, start: float, size: int | None = None, max_frames: int | None = None
 ) -> list[np.ndarray]:
-    """Decode frames from the start time until the end or max_frames, as (H, W, 3) rgb arrays."""
+    """Decode frames from the start time until the end or max_frames, as (H, W, 3) rgb arrays.
+    Needs numpy, which is part of the full extra."""
+    import numpy as np
+
     max_frames_args = [] if max_frames is None else ["-frames:v", str(max_frames)]
     scale_args = [] if size is None else ["-vf", f"scale={size}:{size}"]
     output = subprocess.run(

@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=cullet
+GenericName=Photo Viewer
+Comment=Go through a folder of photos fast: sort, tag, rotate, delete
+Exec=cullet %f
+Terminal=false
+MimeType=image/jpeg;image/png;inode/directory;
+Categories=Graphics;Viewer;Photography;
