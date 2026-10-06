@@ -147,6 +147,21 @@ def test_navigation_and_view(app, folder):
     window.actions.quit()
 
 
+def test_tree_jumps_to_folder(app, folder):
+    # enough siblings sorted before the folder to push it out of the tree once they are listed
+    for i in range(100):
+        (folder.parent / f"a{i:03d}").mkdir()
+    window = open_window(app, folder)
+    tree = window.tree
+
+    def folder_row():
+        return tree.visualRect(window.tree_model.index(folder.as_posix()))
+
+    wait_for(app, lambda: tree.verticalScrollBar().value() > 0, "tree scroll")
+    assert 0 <= folder_row().top() and folder_row().bottom() < tree.viewport().height()
+    window.close()
+
+
 def test_file_operations_and_undo(app, folder):
     good = folder.parent / "good"
     window = open_window(app, folder, target_dirs=[good], tags=["sun"])

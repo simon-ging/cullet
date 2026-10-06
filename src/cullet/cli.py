@@ -1,5 +1,6 @@
 """
-Photo viewer. Open a folder, or an image file to start at that image.
+Photo viewer. Open a folder, or an image file to start at that image. Without a path it opens
+the home folder.
 
     cullet /path/to/photos
 
@@ -45,7 +46,11 @@ DedupPrefixedArgs = make_dedup_image_args_class("DedupPrefixedArgs", prefix=DEDU
 @define
 class Args(DedupPrefixedArgs, VerboseQuietArgs):
     path: Path = add_argument(
-        positional=True, type=str, help="Folder of images, or an image file to start at"
+        positional=True,
+        type=str,
+        nargs="?",
+        default=Path.home().as_posix(),
+        help="Folder of images, or an image file to start at, default is the home folder",
     )
     trash_dir: Path | None = add_argument(
         type=str,

@@ -123,6 +123,9 @@ class MainWindow(QMainWindow):
             self.tree.hideColumn(column)
         self.tree.setHeaderHidden(True)
         self.tree.clicked.connect(self._on_tree_clicked)
+        self._folder_was_in_tree_view = False
+        self.tree_model.layoutAboutToBeChanged.connect(self._before_tree_sorted)
+        self.tree_model.layoutChanged.connect(self._after_tree_sorted)
 
         self.group_list = QListView()
         if review is not None:
@@ -240,6 +243,25 @@ class MainWindow(QMainWindow):
         self.tree.scrollTo(tree_index)
         self.refresh_folder()
         logger.info(f"Folder {folder} with {len(self.file_model.files)} images")
+
+    def _folder_in_tree_view(self) -> bool:
+        # only vertically, the width of the row is not settled before the first layout. Rows
+        # below a collapsed folder have no height.
+        rect = self.tree.visualRect(self.tree_model.index(self.folder.as_posix()))
+        viewport_height = self.tree.viewport().height()
+        return rect.height() > 0 and rect.bottom() >= 0 and rect.top() < viewport_height
+
+    def _before_tree_sorted(self, *_args) -> None:
+        self._folder_was_in_tree_view = self._folder_in_tree_view()
+
+    def _after_tree_sorted(self, *_args) -> None:
+        # the tree model lists directories in the background and sorts them afterwards, which
+        # at startup moves the folder far away from where set_folder scrolled to
+        if self._folder_was_in_tree_view and not self._folder_in_tree_view():
+            self.tree.scrollTo(
+                self.tree_model.index(self.folder.as_posix()),
+                QAbstractItemView.ScrollHint.PositionAtCenter,
+            )
 
     def refresh_folder(self, show: Path | None = None) -> None:
         """Re-read the folder, or in a review the current group. Shows the given file, else
