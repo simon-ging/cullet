@@ -3,16 +3,18 @@ import random
 from functools import partial
 from pathlib import Path
 
-from PySide6.QtCore import QFileSystemWatcher, QModelIndex, Qt, QTimer, Signal
-from PySide6.QtGui import QKeySequence, QResizeEvent, QShortcut
+from PySide6.QtCore import QEvent, QFileSystemWatcher, QModelIndex, QPoint, Qt, QTimer, Signal
+from PySide6.QtGui import QKeyEvent, QKeySequence, QResizeEvent, QShortcut
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QDialog,
     QLabel,
     QListView,
     QMainWindow,
+    QMenu,
     QSplitter,
     QStackedWidget,
+    QToolButton,
     QTreeView,
     QVBoxLayout,
     QWidget,
@@ -37,6 +39,7 @@ from cullet.keymap import (
     format_help,
     make_tag_keymap,
     make_target_keymap,
+    menu_entries,
     split_action,
 )
 from cullet.log_panel import LogPanel
@@ -72,7 +75,7 @@ class _ViewStack(QStackedWidget):
 class MainWindow(QMainWindow):
     """
     Left: folder tree, file list, action log. Right: the image or the thumbnail grid, with the
-    thumbnail strip below. Status bar at the bottom.
+    thumbnail strip below. Status bar at the bottom. The left panel and the strip start hidden.
 
     With a review, the window shows one duplicate group at a time as if it were a folder, and
     the folder tree is replaced by the list of groups.
@@ -102,9 +105,9 @@ class MainWindow(QMainWindow):
         self.recursive = False
         self.sort = SORT_ORDERS[0]
         self.slideshow_random = False
-        self.left_wanted = True
-        self.bottom_wanted = True
-        self.strip_wanted = True
+        self.left_wanted = False
+        self.status_wanted = True
+        self.strip_wanted = False
         self._exif_line = ""
         self.thumb_store: ThumbnailStore | None = None
 
@@ -190,8 +193,18 @@ class MainWindow(QMainWindow):
         splitter.setStretchFactor(1, 1)
         self.setCentralWidget(splitter)
 
+        self.menu = QMenu(self)
+        self.menu_button = QToolButton()
+        self.menu_button.setText("\u2630")
+        self.menu_button.setToolTip("Menu (Alt)")
+        self.menu_button.setAutoRaise(True)
+        # the focus stays on the image, so the keys go on working after a click
+        self.menu_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.menu_button.clicked.connect(self._open_menu_at_button)
+        self._alt_alone = False
         self.status_left = QLabel()
         self.status_right = QLabel()
+        self.statusBar().addWidget(self.menu_button)
         self.statusBar().addWidget(self.status_left, 1)
         self.statusBar().addPermanentWidget(self.status_right)
 
@@ -215,6 +228,8 @@ class MainWindow(QMainWindow):
             if self.tags:
                 keymap = {**keymap, **make_tag_keymap(len(self.tags), len(self.target_dirs))}
         self._bind_keys(keymap)
+        self._fill_menu(keymap)
+        self.apply_panels()
         self.overlays.set_help_text(format_help(keymap, self.actions))
 
         for number, target in enumerate(self.target_dirs, start=1):
@@ -538,11 +553,56 @@ class MainWindow(QMainWindow):
             self.view.setFocus()
         self.overlays.relayout()
 
+    def open_menu(self) -> None:
+        """Pop up the menu in the top left corner of the window."""
+        self.menu.popup(self.centralWidget().mapToGlobal(QPoint(0, 0)))
+
+    def _open_menu_at_button(self) -> None:
+        # a click gets the menu where the mouse is, right above the button
+        corner = self.menu_button.mapToGlobal(QPoint(0, 0))
+        corner.setY(corner.y() - self.menu.sizeHint().height())
+        self.menu.popup(corner)
+
+    def keyPressEvent(self, event: QKeyEvent) -> None:
+        # a tap of Alt opens the menu. Alt held for a second key is something else.
+        self._alt_alone = event.key() == Qt.Key.Key_Alt
+        super().keyPressEvent(event)
+
+    def keyReleaseEvent(self, event: QKeyEvent) -> None:
+        if event.key() == Qt.Key.Key_Alt and self._alt_alone and not event.isAutoRepeat():
+            self.open_menu()
+        self._alt_alone = False
+        super().keyReleaseEvent(event)
+
+    def changeEvent(self, event: QEvent) -> None:
+        # Alt went down here and the desktop switched windows on it, the release never arrives
+        if event.type() == QEvent.Type.ActivationChange:
+            self._alt_alone = False
+        super().changeEvent(event)
+
     def apply_panels(self) -> None:
-        self.left_panel.setVisible(self.left_wanted)
-        self.statusBar().setVisible(self.bottom_wanted)
         # the strip repeats the grid, so it is hidden while the grid is shown
-        self.strip.setVisible(self.strip_wanted and self.bottom_wanted and not self.is_grid_mode())
+        strip_wanted = self.strip_wanted and not self.is_grid_mode()
+        newly_shown = (self.left_wanted and not self.left_panel.isVisible()) or (
+            strip_wanted and not self.strip.isVisible()
+        )
+        self.left_panel.setVisible(self.left_wanted)
+        self.statusBar().setVisible(self.status_wanted)
+        self.strip.setVisible(strip_wanted)
+        if newly_shown:
+            # once the layout has given the views their size
+            QTimer.singleShot(0, self._scroll_panels_to_current)
+
+    def _scroll_panels_to_current(self) -> None:
+        # a hidden view does not follow the navigation, or scrolls for a size it does not have
+        self.tree.scrollTo(
+            self.tree_model.index(self.folder.as_posix()),
+            QAbstractItemView.ScrollHint.PositionAtCenter,
+        )
+        self.file_list.scrollTo(self.file_model.index(self.index))
+        self.strip.scroll_to_row(self.thumb_model.index(self.index))
+        if self.review is not None:
+            self.group_list.scrollTo(self.group_model.index(self.review.group_index))
 
     # ---------- internals
 
@@ -613,11 +673,23 @@ class MainWindow(QMainWindow):
         top_right = "  ".join(part for part in (resolution, self._exif_line) if part)
         self.overlays.set_info(left, path.name, top_right, tags)
 
+    def _bound_action(self, binding: str) -> partial:
+        action_name, args = split_action(binding)
+        # getattr fails loudly for a typo in the keymap
+        return partial(getattr(self.actions, action_name), *args)
+
+    def _fill_menu(self, keymap: dict[str, str]) -> None:
+        for title, entries in menu_entries(keymap, self.actions):
+            group_menu = self.menu.addMenu(title)
+            for binding, label, keys in entries:
+                # the keys are only shown. Giving them to the menu entry as well would make
+                # every key ambiguous with its shortcut, and Qt then fires neither.
+                entry = group_menu.addAction(f"{label.replace('&', '&&')}\t{keys}")
+                entry.triggered.connect(lambda _checked, run=self._bound_action(binding): run())
+
     def _bind_keys(self, keymap: dict[str, str]) -> None:
         for key, value in keymap.items():
-            action_name, args = split_action(value)
-            # getattr fails loudly for a typo in the keymap
-            action = partial(getattr(self.actions, action_name), *args)
+            action = self._bound_action(value)
             if key in VIEW_KEYS:
                 shortcut = QShortcut(QKeySequence(key), self.stack)
                 shortcut.setContext(Qt.ShortcutContext.WidgetWithChildrenShortcut)

@@ -184,7 +184,7 @@ class Actions:
         self.window.set_fullscreen(not self.window.isFullScreen())
 
     def toggle_grid(self) -> None:
-        """thumbnail grid instead of the image"""
+        """thumbnail grid"""
         self.window.set_grid_mode(not self.window.is_grid_mode())
 
     def toggle_thumbnails(self) -> None:
@@ -197,9 +197,9 @@ class Actions:
         self.window.left_wanted = not self.window.left_wanted
         self.window.apply_panels()
 
-    def toggle_bottom(self) -> None:
-        """bottom: strip and status bar"""
-        self.window.bottom_wanted = not self.window.bottom_wanted
+    def toggle_status_bar(self) -> None:
+        """status bar"""
+        self.window.status_wanted = not self.window.status_wanted
         self.window.apply_panels()
 
     def toggle_info(self) -> None:
@@ -207,8 +207,12 @@ class Actions:
         self.window.overlays.toggle_info()
 
     def toggle_help(self) -> None:
-        """this help"""
+        """help: all keys and mouse actions"""
         self.window.overlays.toggle_help()
+
+    def open_menu(self) -> None:
+        """menu of all actions, also on a tap of Alt"""
+        self.window.open_menu()
 
     def exit_fullscreen(self) -> None:
         """leave fullscreen"""

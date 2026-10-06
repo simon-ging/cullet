@@ -22,7 +22,8 @@
 </p>
 
 Keyboard-driven photo viewer for going through a folder fast: step, zoom, rotate, delete, move
-into target folders, tag, and review duplicates. Press `h` in the viewer for the keys.
+into target folders, tag, and review duplicates. Press `h` in the viewer for the keys, or tap
+Alt for a menu of everything they do.
 
 ## Install
 

@@ -10,7 +10,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 from PIL import Image
-from PySide6.QtCore import Qt
+from PySide6.QtCore import QPoint, Qt
 from PySide6.QtTest import QTest
 from PySide6.QtWidgets import QApplication
 
@@ -117,7 +117,7 @@ def test_navigation_and_view(app, folder):
     for toggle in (
         window.actions.toggle_thumbnails,
         window.actions.toggle_left_panel,
-        window.actions.toggle_bottom,
+        window.actions.toggle_status_bar,
         window.actions.toggle_info,
         window.actions.toggle_help,
         window.actions.toggle_fullscreen,
@@ -152,6 +152,7 @@ def test_tree_jumps_to_folder(app, folder):
     for i in range(100):
         (folder.parent / f"a{i:03d}").mkdir()
     window = open_window(app, folder)
+    window.actions.toggle_left_panel()
     tree = window.tree
 
     def folder_row():
@@ -159,6 +160,71 @@ def test_tree_jumps_to_folder(app, folder):
 
     wait_for(app, lambda: tree.verticalScrollBar().value() > 0, "tree scroll")
     assert 0 <= folder_row().top() and folder_row().bottom() < tree.viewport().height()
+    window.close()
+
+
+def test_menu(app, folder):
+    window = open_window(app, folder)
+    QTest.keyClick(window.view, Qt.Key.Key_Alt)
+    assert window.menu.isVisible()
+    assert window.menu.pos() == window.centralWidget().mapToGlobal(QPoint(0, 0))
+    window.menu.close()
+    window.menu_button.click()
+    assert window.menu.isVisible()
+    assert window.menu.pos().y() > window.centralWidget().mapToGlobal(QPoint(0, 0)).y()
+    window.menu.close()
+    window.actions.toggle_left_panel()
+    app.processEvents()
+    QTest.keyClick(window.tree, Qt.Key.Key_Alt)
+    assert window.menu.isVisible(), "Alt has to get through from the side panels too"
+    window.menu.close()
+
+    QTest.keyPress(window.view, Qt.Key.Key_Alt)
+    QTest.keyClick(window.view, Qt.Key.Key_F7, Qt.KeyboardModifier.AltModifier)
+    QTest.keyRelease(window.view, Qt.Key.Key_Alt)
+    assert not window.menu.isVisible(), "Alt held for another key is not a tap"
+
+    # the shortcut needs the active window, and offscreen nothing hands the activation back
+    # after the popups
+    window.activateWindow()
+    wait_for(app, window.isActiveWindow, "window active")
+    QTest.keyClick(window, Qt.Key.Key_F10)
+    assert window.menu.isVisible()
+    window.menu.close()
+
+    navigate = window.menu.actions()[0].menu()
+    next(entry for entry in navigate.actions() if entry.text().startswith("Next image")).trigger()
+    assert window.index == 1
+    window.close()
+
+
+def test_panels(app, folder):
+    window = open_window(app, folder)
+
+    def shown():
+        return (
+            window.left_panel.isVisible(),
+            window.strip.isVisible(),
+            window.statusBar().isVisible(),
+        )
+
+    assert shown() == (False, False, True), "only the status bar at the start"
+    window.actions.toggle_thumbnails()
+    window.actions.toggle_status_bar()
+    assert shown() == (False, True, False), "the status bar key leaves the strip alone"
+    window.actions.toggle_grid()
+    assert not window.strip.isVisible(), "the grid replaces the strip"
+    window.actions.toggle_grid()
+
+    # a view that was hidden while stepping shows the current image once it appears
+    window.actions.toggle_thumbnails()
+    window.actions.last_image()
+    window.actions.toggle_thumbnails()
+    window.actions.toggle_left_panel()
+    window.file_list.setFixedHeight(40)
+    app.processEvents()
+    row = window.file_list.visualRect(window.file_model.index(window.index))
+    assert window.file_list.viewport().rect().contains(row)
     window.close()
 
 

@@ -2,8 +2,11 @@
 Default key bindings, geeqie-like. Keys are Qt key sequence strings, values are method names
 of cullet.actions.Actions, optionally with one integer argument after a colon
 ("delete_member:3"). The help overlay is generated from this table and the docstrings of those
-methods, so every new binding needs a documented action.
+methods, so every new binding needs a documented action. The menu is generated from the same
+two plus ACTION_GROUPS, so every action also needs a group.
 """
+
+import re
 
 DEFAULT_KEYMAP: dict[str, str] = {
     "Space": "next_image",
@@ -41,9 +44,10 @@ DEFAULT_KEYMAP: dict[str, str] = {
     "G": "toggle_grid",
     "T": "toggle_thumbnails",
     "L": "toggle_left_panel",
-    "B": "toggle_bottom",
+    "B": "toggle_status_bar",
     "O": "toggle_info",
     "H": "toggle_help",
+    "F10": "open_menu",
     "Q": "quit",
     "Escape": "exit_fullscreen",
 }
@@ -79,6 +83,53 @@ def make_tag_keymap(n_tags: int, offset: int = 0) -> dict[str, str]:
 VIEW_KEYS = {"Left", "Right", "Up", "Down"}
 
 
+# menu titles with their mnemonic, and the actions below each in menu order
+ACTION_GROUPS: dict[str, list[str]] = {
+    "&Navigate": [
+        "next_image",
+        "prev_image",
+        "first_image",
+        "last_image",
+        "nav_up",
+        "nav_down",
+        "arrow_left",
+        "arrow_right",
+        "arrow_up",
+        "arrow_down",
+    ],
+    "&Review": ["next_group", "prev_group", "accept_proposal", "delete_member"],
+    "&File": [
+        "move_to_target",
+        "toggle_tag",
+        "rotate_left",
+        "rotate_right",
+        "rename_current",
+        "delete_current",
+        "undo",
+    ],
+    "&Zoom": ["zoom_in", "zoom_out", "zoom_fit", "zoom_actual", "toggle_zoom_filter"],
+    "&Slideshow": [
+        "toggle_slideshow",
+        "toggle_slideshow_random",
+        "slideshow_slower",
+        "slideshow_faster",
+    ],
+    "&Listing": ["toggle_recursive", "cycle_sort_order"],
+    "&Window": [
+        "toggle_grid",
+        "toggle_fullscreen",
+        "exit_fullscreen",
+        "toggle_left_panel",
+        "toggle_thumbnails",
+        "toggle_status_bar",
+        "toggle_info",
+        "toggle_help",
+        "open_menu",
+        "quit",
+    ],
+}
+
+
 def split_action(value: str) -> tuple[str, list[int]]:
     """'delete_member:3' -> ('delete_member', [3]), 'next_image' -> ('next_image', [])."""
     name, _, arg = value.partition(":")
@@ -95,6 +146,12 @@ MOUSE_BINDINGS: list[tuple[str, str]] = [
 ]
 
 
+def describe_action(actions: object, action_name: str) -> str:
+    doc = getattr(type(actions), action_name).__doc__
+    assert doc, f"Action {action_name} needs a docstring, it is shown in the help and the menu"
+    return " ".join(doc.split())
+
+
 def format_help(keymap: dict[str, str], actions: object) -> str:
     """One line per action: its keys, then the docstring of the action method."""
     keys_per_action: dict[str, list[str]] = {}
@@ -103,9 +160,36 @@ def format_help(keymap: dict[str, str], actions: object) -> str:
         keys_per_action.setdefault(action_name, []).append(key)
     rows = []
     for action_name, keys in keys_per_action.items():
-        doc = getattr(type(actions), action_name).__doc__
-        assert doc, f"Action {action_name} needs a docstring, it is shown in the help overlay"
-        rows.append((" ".join(keys), " ".join(doc.split())))
+        rows.append((" ".join(keys), describe_action(actions, action_name)))
     rows += MOUSE_BINDINGS
     width = max(len(keys) for keys, _ in rows)
     return "\n".join(f"{keys:<{width}}  {description}" for keys, description in rows)
+
+
+def menu_entries(
+    keymap: dict[str, str], actions: object
+) -> list[tuple[str, list[tuple[str, str, str]]]]:
+    """The bound actions for the menu: per group its title and one (binding, label, keys) per
+    entry. Groups without a bound action are left out. A binding with a number is an entry of
+    its own, with the number in place of the N of the description."""
+    keys_per_binding: dict[str, list[str]] = {}
+    for key, value in keymap.items():
+        keys_per_binding.setdefault(value, []).append(key)
+    grouped = {name for names in ACTION_GROUPS.values() for name in names}
+    ungrouped = {split_action(binding)[0] for binding in keys_per_binding} - grouped
+    assert not ungrouped, f"Actions {sorted(ungrouped)} need a group in ACTION_GROUPS"
+    menus = []
+    for title, names in ACTION_GROUPS.items():
+        entries = []
+        for name in names:
+            for binding, keys in keys_per_binding.items():
+                action_name, args = split_action(binding)
+                if action_name != name:
+                    continue
+                label = describe_action(actions, name)
+                for arg in args:
+                    label = re.sub(r"\bN\b", str(arg), label)
+                entries.append((binding, label[0].upper() + label[1:], " ".join(keys)))
+        if entries:
+            menus.append((title, entries))
+    return menus
